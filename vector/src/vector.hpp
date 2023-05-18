@@ -2,7 +2,6 @@
 #define SJTU_VECTOR_HPP
 
 #include "exceptions.hpp"
-
 #include <climits>
 #include <cstddef>
 
@@ -26,15 +25,6 @@ class vector
 		free(head);
 		head = tmp;
 		max *= 2;
-	}
-	void shrink()
-	{
-		T* tmp = (T*)malloc(max/2 * sizeof(T));
-		for (size_t i = 0; i < now; ++i) new(tmp+i) T(head[i]);
-		for (size_t i = 0; i < now; ++i) (head+i)->~T();
-		free(head);
-		head = tmp;
-		max /= 2;
 	}
 
 public:
@@ -278,8 +268,8 @@ public:
 	 */
 	vector() 
 	{
-		head = (T*)malloc(sizeof(T));
-		max = 1;
+		head = (T*)malloc(8*sizeof(T));
+		max = 8;
 		now = 0;
 	}
 	vector(const vector &other) 
@@ -335,13 +325,13 @@ public:
 	 */
 	T & operator[](const size_t &pos) 
 	{
-		if (pos < 0 || pos >= now)
+		if (pos < 0 || pos >= max)
 			throw index_out_of_bound();
 		return head[pos];
 	}
 	const T & operator[](const size_t &pos) const 
 	{
-		if (pos < 0 || pos >= now)
+		if (pos < 0 || pos >= max)
 			throw index_out_of_bound();
 		return head[pos];
 	}
@@ -406,8 +396,8 @@ public:
 	{
 		for (size_t i = 0; i < now; ++i) (head+i)->~T();
 		free(head);
-		head = malloc(sizeof(T));
-		max = 1;
+		head = (T*) malloc(8*sizeof(T));
+		max = 8;
 		now = 0;
 	}
 	/**
@@ -457,7 +447,6 @@ public:
 			head[i] = head[i+1];
 		--now;
 		(head+now)->~T();
-		if (now < max/2) shrink();
 		return iterator(head, ind); 
 	}
 	/**
@@ -478,7 +467,15 @@ public:
 		if (now == 0) throw container_is_empty();
 		--now;
 		(head+now)->~T();
-		if (now < max/2) shrink();
+	}
+	// reserve x*sizeof(T) space for UNUSED vector
+	void reserve(size_t x)
+	{
+		if (x <= 8) return;
+		free(head);
+		head = (T*) malloc(x*sizeof(T));
+		max = x;
+		now = 0;
 	}
 };
 
